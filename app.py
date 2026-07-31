@@ -117,7 +117,6 @@ if st.button("คำนวณเงิน", type="primary"):
             grand_total = total_weekday + total_weekend
 
             # ---------- ตารางสรุปยอดรวม (Summary Table) ----------
-            st.subheader("🧾 สรุปยอดรวม")
 
             pct_weekday = (total_weekday / grand_total * 100) if grand_total else 0
             pct_weekend = (total_weekend / grand_total * 100) if grand_total else 0
