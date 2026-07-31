@@ -7,7 +7,7 @@ from io import BytesIO
 
 # 1. ตั้งค่าหน้าตาของโปรแกรมเบื้องต้น
 # TODO: ถ้ามีไอคอนของตัวเองแล้ว ใส่ path หรือ URL รูปที่นี่ เช่น "assets/icon.png" หรือ "https://.../icon.png"
-CUSTOM_ICON = "https://www.rw-designer.com/icon-image/5547-256x256x32.png"
+CUSTOM_ICON = None  # ตัวอย่าง: CUSTOM_ICON = "assets/icon.png"
 
 st.set_page_config(
     page_title="Jaay",
@@ -158,9 +158,9 @@ if st.button("คำนวณเงิน", type="primary"):
 
             def highlight_day_type(row):
                 if row["ประเภทวัน"] == "วันหยุด":
-                    return ['background-color: #FFE4E1'] * len(row)
+                    return ['background-color: rgba(255, 148, 148, 0.18); color: #FF9494'] * len(row)
                 else:
-                    return ['background-color: #E4F5E4'] * len(row)
+                    return ['background-color: rgba(179, 197, 255, 0.18); color: #B3C5FF'] * len(row)
 
             styled_df = df.style.apply(highlight_day_type, axis=1).format({"จำนวนเงิน (บาท)": "{:.2f}"})
             st.dataframe(styled_df, use_container_width=True)
