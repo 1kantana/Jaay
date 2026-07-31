@@ -7,7 +7,7 @@ from io import BytesIO
 
 # 1. ตั้งค่าหน้าตาของโปรแกรมเบื้องต้น
 # TODO: ถ้ามีไอคอนของตัวเองแล้ว ใส่ path หรือ URL รูปที่นี่ เช่น "assets/icon.png" หรือ "https://.../icon.png"
-CUSTOM_ICON = None  # ตัวอย่าง: CUSTOM_ICON = "assets/icon.png"
+CUSTOM_ICON = None  # ตัวอย่าง: CUSTOM_ICON = "https://www.rw-designer.com/icon-image/5547-256x256x32.png"
 
 st.set_page_config(
     page_title="Jaay",
