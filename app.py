@@ -6,7 +6,7 @@ import pandas as pd
 from io import BytesIO
 
 # 1. ตั้งค่าหน้าตาของโปรแกรมเบื้องต้น
-st.set_page_config(page_title="Jaay", page_icon="🪙", layout="centered")
+st.set_page_config(page_title="Jaay", page_icon="🧾", layout="centered")
 
 # 2. ใส่ Custom CSS เพื่อเปลี่ยนฟอนต์ทั้งแอปเป็น "Sarabun"
 st.markdown(
@@ -30,8 +30,8 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# โลโก้เหรียญมินิมอลสำหรับ "Jaay" (สื่อถึงการจ่ายเงิน/บาท) แบบบรรทัดเดียว
-JAAY_ICON = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="42" style="vertical-align: middle; margin-left: 10px;"><circle cx="12" cy="12" r="10.5" fill="#FFEAD2" stroke="#20262E" stroke-width="1.2"/><circle cx="12" cy="12" r="7.6" fill="none" stroke="#FF9494" stroke-width="1.2"/><text x="12" y="16.5" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="700" fill="#20262E">฿</text></svg>'
+# โลโก้ใบเสร็จมินิมอลสำหรับ "Jaay" แบบบรรทัดเดียว
+JAAY_ICON = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="42" style="vertical-align: middle; margin-left: 10px;"><path d="M5 3h14v17l-2-1.3L15 20l-2-1.3L11 20l-2-1.3L7 20l-2-1.3z" fill="#FFEAD2" stroke="#20262E" stroke-width="1"/><line x1="7.5" y1="7" x2="16.5" y2="7" stroke="#FF9494" stroke-width="1.3"/><line x1="7.5" y1="10.5" x2="16.5" y2="10.5" stroke="#20262E" stroke-width="1.3"/><line x1="7.5" y1="14" x2="13" y2="14" stroke="#20262E" stroke-width="1.3"/></svg>'
 
 st.markdown(
     f'<h1 style="display: flex; align-items: center; white-space: nowrap;">Jaay {JAAY_ICON}</h1>', 
