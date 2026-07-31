@@ -104,12 +104,12 @@ if st.button("คำนวณเงิน", type="primary"):
                 else:
                     total_weekday += amount
 
-                # ปรับการแสดงผลประเภทวันในตาราง (DataFrame) เป็น Holidays / Working Days
+                # ปรับการแสดงผลประเภทวันในตาราง (DataFrame) เป็นภาษาไทยทั้งหมด
                 all_rows.append({
-                    "Date": formatted_date,
-                    "Item": item,
-                    "Amount (THB)": amount,
-                    "Day Type": "Holidays" if day_type == "Weekend" else "Working Days"
+                    "วันที่": formatted_date,
+                    "รายการ": item,
+                    "จำนวนเงิน (บาท)": amount,
+                    "ประเภทวัน": "วันหยุด" if day_type == "Weekend" else "วันทำงาน"
                 })
 
         # แสดงผลลัพธ์เมื่อประมวลผลเสร็จ
@@ -123,9 +123,9 @@ if st.button("คำนวณเงิน", type="primary"):
             pct_weekend = (total_weekend / grand_total * 100) if grand_total else 0
 
             summary_display_df = pd.DataFrame([
-                {"ประเภทวัน": "💼 Working Days", "ยอดรวม (บาท)": round(total_weekday, 2), "สัดส่วน (%)": round(pct_weekday, 1)},
-                {"ประเภทวัน": "🏖️ Holidays", "ยอดรวม (บาท)": round(total_weekend, 2), "สัดส่วน (%)": round(pct_weekend, 1)},
-                {"ประเภทวัน": "💵 Grand Total", "ยอดรวม (บาท)": round(grand_total, 2), "สัดส่วน (%)": 100.0},
+                {"ประเภทวัน": "💼 วันทำงาน", "ยอดรวม (บาท)": round(total_weekday, 2), "สัดส่วน (%)": round(pct_weekday, 1)},
+                {"ประเภทวัน": "🏖️ วันหยุด", "ยอดรวม (บาท)": round(total_weekend, 2), "สัดส่วน (%)": round(pct_weekend, 1)},
+                {"ประเภทวัน": "💵 ยอดรวมทั้งหมด", "ยอดรวม (บาท)": round(grand_total, 2), "สัดส่วน (%)": 100.0},
             ])
 
             st.dataframe(
@@ -149,27 +149,35 @@ if st.button("คำนวณเงิน", type="primary"):
             df.index = df.index + 1  # เริ่ม Index ที่ 1
 
             def highlight_day_type(row):
-                if row["Day Type"] == "Holidays":
+                if row["ประเภทวัน"] == "วันหยุด":
                     return ['background-color: #FFE4E1'] * len(row)
                 else:
                     return ['background-color: #E4F5E4'] * len(row)
 
-            styled_df = df.style.apply(highlight_day_type, axis=1)
+            styled_df = df.style.apply(highlight_day_type, axis=1).format({"จำนวนเงิน (บาท)": "{:.2f}"})
             st.dataframe(styled_df, use_container_width=True)
 
             # ส่วนการสร้างไฟล์ Excel สำหรับดาวน์โหลด
             output = BytesIO()
             with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
-                df.to_excel(writer, index=False, sheet_name="Expenses")
+                export_df = df.copy()
+                export_df["จำนวนเงิน (บาท)"] = export_df["จำนวนเงิน (บาท)"].round(2)
+                export_df.to_excel(writer, index=False, sheet_name="รายการ")
 
-                # 3. เปลี่ยนข้อความในหน้า Summary ของไฟล์ Excel ให้แมตช์กัน
+                # สรุปยอดรวมในชีท Summary ให้ใช้ชื่อคอลัมน์ภาษาไทยตรงกับหน้าเว็บ
                 summary_data = [
-                    {"Type": "Working Days Total", "Amount (THB)": total_weekday},
-                    {"Type": "Holidays Total", "Amount (THB)": total_weekend},
-                    {"Type": "Grand Total", "Amount (THB)": grand_total}
+                    {"ประเภท": "วันทำงาน", "จำนวนเงิน (บาท)": round(total_weekday, 2)},
+                    {"ประเภท": "วันหยุด", "จำนวนเงิน (บาท)": round(total_weekend, 2)},
+                    {"ประเภท": "ยอดรวมทั้งหมด", "จำนวนเงิน (บาท)": round(grand_total, 2)}
                 ]
                 summary_df = pd.DataFrame(summary_data)
-                summary_df.to_excel(writer, index=False, sheet_name="Summary")
+                summary_df.to_excel(writer, index=False, sheet_name="สรุป")
+
+                # กำหนดรูปแบบตัวเลขให้แสดงทศนิยม 2 ตำแหน่งในไฟล์ Excel ด้วย
+                workbook = writer.book
+                number_format = workbook.add_format({"num_format": "#,##0.00"})
+                writer.sheets["รายการ"].set_column("C:C", 15, number_format)
+                writer.sheets["สรุป"].set_column("B:B", 15, number_format)
 
             output.seek(0)
 
