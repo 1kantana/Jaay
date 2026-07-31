@@ -114,28 +114,48 @@ if st.button("คำนวณเงิน", type="primary"):
 
         # แสดงผลลัพธ์เมื่อประมวลผลเสร็จ
         if all_rows:
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                # 1. เปลี่ยนหัวข้อฝั่งวันธรรมดาบนหน้าเว็บ
-                st.subheader("🔖 Working Days")
-                st.write(f"**Total Working Days:** {round(total_weekday, 2)} บาท")
+            grand_total = total_weekday + total_weekend
 
-            with col2:
-                # 2. เปลี่ยนหัวข้อฝั่งวันหยุดบนหน้าเว็บ
-                st.subheader("🏷️ Holidays")
-                st.write(f"**Total Holidays:** {round(total_weekend, 2)} บาท")
+            # ---------- ตารางสรุปยอดรวม (Summary Table) ----------
+            st.subheader("📊 สรุปยอดรวม")
+
+            pct_weekday = (total_weekday / grand_total * 100) if grand_total else 0
+            pct_weekend = (total_weekend / grand_total * 100) if grand_total else 0
+
+            summary_display_df = pd.DataFrame([
+                {"ประเภทวัน": "💼 Working Days", "ยอดรวม (บาท)": round(total_weekday, 2), "สัดส่วน (%)": round(pct_weekday, 1)},
+                {"ประเภทวัน": "🏖️ Holidays", "ยอดรวม (บาท)": round(total_weekend, 2), "สัดส่วน (%)": round(pct_weekend, 1)},
+                {"ประเภทวัน": "💵 Grand Total", "ยอดรวม (บาท)": round(grand_total, 2), "สัดส่วน (%)": 100.0},
+            ])
+
+            st.dataframe(
+                summary_display_df,
+                use_container_width=True,
+                hide_index=True,
+                column_config={
+                    "ประเภทวัน": st.column_config.TextColumn("ประเภทวัน", width="medium"),
+                    "ยอดรวม (บาท)": st.column_config.NumberColumn("ยอดรวม (บาท)", format="%.2f บาท"),
+                    "สัดส่วน (%)": st.column_config.ProgressColumn(
+                        "สัดส่วน (%)", format="%.1f%%", min_value=0, max_value=100
+                    ),
+                },
+            )
 
             st.markdown("---")
-            grand_total = total_weekday + total_weekend
-            st.metric(label="💵 ยอดรวมทั้งหมด (Grand Total)", value=f"{round(grand_total, 2)} บาท")
 
             # แสดงตารางสรุปรายการทั้งหมด
             st.subheader("📋 รายการทั้งหมด")
             df = pd.DataFrame(all_rows)
             df.index = df.index + 1  # เริ่ม Index ที่ 1
 
-            st.dataframe(df, use_container_width=True)
+            def highlight_day_type(row):
+                if row["Day Type"] == "Holidays":
+                    return ['background-color: #FFE4E1'] * len(row)
+                else:
+                    return ['background-color: #E4F5E4'] * len(row)
+
+            styled_df = df.style.apply(highlight_day_type, axis=1)
+            st.dataframe(styled_df, use_container_width=True)
 
             # ส่วนการสร้างไฟล์ Excel สำหรับดาวน์โหลด
             output = BytesIO()
