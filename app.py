@@ -6,7 +6,7 @@ import pandas as pd
 from io import BytesIO
 
 # 1. ตั้งค่าหน้าตาของโปรแกรมเบื้องต้น
-st.set_page_config(page_title="Pim-Tang TH", page_icon="📝", layout="centered")
+st.set_page_config(page_title="Jaay", page_icon="🪙", layout="centered")
 
 # 2. ใส่ Custom CSS เพื่อเปลี่ยนฟอนต์ทั้งแอปเป็น "Sarabun"
 st.markdown(
@@ -30,11 +30,11 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# ไอคอนเครื่องคิดเลขมินิมอลแบบบรรทัดเดียว (ป้องกันการแสดงผลแท็กหลุด)
-CALCULATOR_ICON = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="42" style="vertical-align: middle; margin-left: 10px;"><rect x="3" y="2" width="18" height="20" rx="5" fill="#FFEAD2"/><rect x="5" y="4" width="14" height="5" rx="2.5" fill="#20262E"/><rect x="8" y="6" width="5" height="1" rx="0.5" fill="#FFF"/><rect x="5" y="11" width="3" height="3" rx="1.5" fill="#FF9494"/><rect x="10.5" y="11" width="3" height="3" rx="1.5" fill="#FFF"/><rect x="16" y="11" width="3" height="3" rx="1.5" fill="#FFF"/><rect x="5" y="16" width="3" height="3" rx="1.5" fill="#FFF"/><rect x="10.5" y="16" width="8.5" height="3" rx="1.5" fill="#B3C5FF"/></svg>'
+# โลโก้เหรียญมินิมอลสำหรับ "Jaay" (สื่อถึงการจ่ายเงิน/บาท) แบบบรรทัดเดียว
+JAAY_ICON = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="42" style="vertical-align: middle; margin-left: 10px;"><circle cx="12" cy="12" r="10.5" fill="#FFEAD2" stroke="#20262E" stroke-width="1.2"/><circle cx="12" cy="12" r="7.6" fill="none" stroke="#FF9494" stroke-width="1.2"/><text x="12" y="16.5" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="700" fill="#20262E">฿</text></svg>'
 
 st.markdown(
-    f'<h1 style="display: flex; align-items: center; white-space: nowrap;">Pim-Tang {CALCULATOR_ICON}</h1>', 
+    f'<h1 style="display: flex; align-items: center; white-space: nowrap;">Jaay {JAAY_ICON}</h1>', 
     unsafe_allow_html=True
 )
 
@@ -183,6 +183,6 @@ if st.button("คำนวณเงิน", type="primary"):
             st.download_button(
                 label="📥 ดาวน์โหลดไฟล์ Excel (.xlsx)",
                 data=output,
-                file_name=f"pim_tang_report_{YEAR}.xlsx",
+                file_name=f"jaay_report_{YEAR}.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             )
