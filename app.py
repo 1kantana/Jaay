@@ -131,7 +131,7 @@ if st.button("คำนวณเงิน", type="primary"):
             pct_weekend = (total_weekend / grand_total * 100) if grand_total else 0
 
             summary_display_df = pd.DataFrame([
-                {"ประเภทวัน": "📧 วันทำงาน", "ยอดรวม (บาท)": round(total_weekday, 2), "สัดส่วน (%)": round(pct_weekday, 1)},
+                {"ประเภทวัน": "🖍️ วันทำงาน", "ยอดรวม (บาท)": round(total_weekday, 2), "สัดส่วน (%)": round(pct_weekday, 1)},
                 {"ประเภทวัน": "🏕️ วันหยุด", "ยอดรวม (บาท)": round(total_weekend, 2), "สัดส่วน (%)": round(pct_weekend, 1)},
                 {"ประเภทวัน": "💵 ยอดรวมทั้งหมด", "ยอดรวม (บาท)": round(grand_total, 2), "สัดส่วน (%)": 100.0},
             ])
