@@ -38,7 +38,7 @@ st.markdown(
 )
 
 # TODO: ถ้ามีไอคอน/โลโก้ที่จะวางไว้หลังคำว่า "Jaay" ใส่โค้ด HTML ของไอคอนไว้ในตัวแปรนี้
-HEADER_ICON = '<img src="https://www.rw-designer.com/icon-image/5547-256x256x8.png" width="36" style="vertical-align: middle; margin-left: 10px;">'
+# ตัวอย่าง (ไอคอนจาก URL): HEADER_ICON = '<img src="https://example.com/icon.png" width="36" style="vertical-align: middle; margin-left: 10px;">'
 # ตัวอย่าง (ไอคอน SVG เอง): HEADER_ICON = '<svg ...>...</svg>'
 HEADER_ICON = ""
 
