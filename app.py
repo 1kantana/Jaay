@@ -37,8 +37,13 @@ st.markdown(
     unsafe_allow_html=True
 )
 
+# TODO: ถ้ามีไอคอน/โลโก้ที่จะวางไว้หลังคำว่า "Jaay" ใส่โค้ด HTML ของไอคอนไว้ในตัวแปรนี้
+HEADER_ICON = '<img src="https://www.rw-designer.com/icon-image/5547-256x256x32.png" width="36" style="vertical-align: middle; margin-left: 10px;">'
+# ตัวอย่าง (ไอคอน SVG เอง): HEADER_ICON = '<svg ...>...</svg>'
+HEADER_ICON = ""
+
 st.markdown(
-    '<h1 style="white-space: nowrap;">Jaay</h1>', 
+    f'<h1 style="display: flex; align-items: center; white-space: nowrap;">Jaay {HEADER_ICON}</h1>', 
     unsafe_allow_html=True
 )
 
