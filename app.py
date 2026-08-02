@@ -49,28 +49,56 @@ st.markdown(
 
 YEAR = 2026
 
-def is_weekend(day_num):
-    """ตรวจสอบว่าเป็นวันเสาร์-อาทิตย์ไหม โดยอิงจากวัน, เดือนปัจจุบัน และปี 2026"""
-    now = datetime.now()
-    current_month = now.month
+THAI_MONTHS = [
+    "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
+    "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"
+]
+
+# แก้ Bug: เดิมใช้เดือน "ปัจจุบันจริง" (now.month) กับทุกวันที่กรอกเสมอ
+# ทำให้ถ้ากรอกรายการของเดือนก่อนหน้า (เช่น เข้าแอปวันที่ 2 ส.ค. แต่กรอกวันที่ 31 ก.ค.)
+# โปรแกรมจะตีความผิดเป็นวันที่ 31 สิงหาคมทันที
+# ให้ผู้ใช้เลือก "เดือนอ้างอิง" เอง และรองรับการระบุเดือนต่อบรรทัดด้วย (เช่น 31/7 60)
+now = datetime.now()
+month_options = list(range(1, 13))
+default_month_index = now.month - 1
+
+selected_month = st.selectbox(
+    "🗓️ เดือนอ้างอิง (ใช้กับวันที่ที่ไม่ได้ระบุเดือน)",
+    options=month_options,
+    index=default_month_index,
+    format_func=lambda m: THAI_MONTHS[m - 1],
+)
+
+def is_weekend(day_num, month_num):
+    """ตรวจสอบว่าเป็นวันเสาร์-อาทิตย์ไหม โดยอิงจากวัน, เดือนที่ระบุ และปี 2026"""
     current_year = YEAR
-    
     try:
-        dt = datetime(current_year, current_month, int(day_num))
+        dt = datetime(current_year, month_num, int(day_num))
         return dt.weekday() >= 5, dt.strftime(f"%d/%m/{current_year}")
     except ValueError:
-        return False, f"{day_num} (วันที่ไม่ถูกต้อง)"
+        return False, f"{day_num}/{month_num} (วันที่ไม่ถูกต้อง)"
+
+def parse_day_month(day_part, default_month):
+    """แยกวันที่และเดือนจากส่วนหน้าสุดของบรรทัด รองรับทั้ง 'DD' และ 'DD/MM'"""
+    if "/" in day_part:
+        d_str, _, m_str = day_part.partition("/")
+        if not (d_str.isdigit() and m_str.isdigit()):
+            return None, None
+        return int(d_str), int(m_str)
+    if not day_part.isdigit():
+        return None, None
+    return int(day_part), default_month
 
 # ช่องสำหรับกรอกข้อมูลค่าใช้จ่าย
 data = st.text_area(
     "กรอกข้อมูลค่าใช้จ่ายของคุณ:",
     value="",
     height=200,
-    placeholder="ตัวอย่างการกรอก:\n15 อเมซอน 60 สตาร์บัคส์ 160"
+    placeholder="ตัวอย่างการกรอก:\n15 อเมซอน 60 สตาร์บัคส์ 160\n31/7 ค่าทางด่วน 50  (ระบุเดือนได้ ถ้าเป็นเดือนอื่นนอกจากเดือนอ้างอิง)"
 )
 
 # ใส่คำอธิบายรูปแบบการกรอกใต้กล่องข้อความ
-st.caption("💡 รูปแบบที่รองรับ: `[วันที่] [รายการ] [จำนวนเงิน] [รายการ] [จำนวนเงิน] ...` (เว้นวรรคแยกแต่ละส่วน)")
+st.caption("💡 รูปแบบที่รองรับ: `[วันที่] [รายการ] [จำนวนเงิน] ...` หรือ `[วันที่/เดือน] [รายการ] [จำนวนเงิน] ...` (เว้นวรรคแยกแต่ละส่วน) — ถ้าไม่ระบุเดือนจะใช้ \"เดือนอ้างอิง\" ด้านบน")
 
 # ปุ่มกดคำนวณเงิน
 if st.button("คำนวณเงิน", type="primary"):
@@ -89,12 +117,13 @@ if st.button("คำนวณเงิน", type="primary"):
             
             parts = line.split()
             day_part = parts[0]
-            
-            if not day_part.isdigit():
+
+            day_num, month_num = parse_day_month(day_part, selected_month)
+            if day_num is None:
                 st.error(f"⚠️ บรรทัดนี้ไม่ได้ขึ้นต้นด้วยวันที่ที่ถูกต้อง: '{line}'")
                 continue
-                
-            weekend, formatted_date = is_weekend(day_part)
+
+            weekend, formatted_date = is_weekend(day_num, month_num)
             day_type = "Weekend" if weekend else "Weekday"
             items_part = " ".join(parts[1:])
             
@@ -125,29 +154,21 @@ if st.button("คำนวณเงิน", type="primary"):
         if all_rows:
             grand_total = total_weekday + total_weekend
 
-            # ---------- ตารางสรุปยอดรวม (Summary Table) ----------
+            # ---------- สรุปยอดรวม (Summary) ----------
+            # เดิมใช้ st.dataframe + ProgressColumn ซึ่งบนจอมือถือ (คอลัมน์ถูกบีบแคบ)
+            # แถบสีของ ProgressColumn จะทับ/บดบังตัวเลขจนมองไม่เห็นยอดรวม
+            # เปลี่ยนมาใช้ st.metric ซึ่ง responsive และตัวเลขจะไม่มีวันถูกบังหรือตัดขาด
 
             pct_weekday = (total_weekday / grand_total * 100) if grand_total else 0
             pct_weekend = (total_weekend / grand_total * 100) if grand_total else 0
 
-            summary_display_df = pd.DataFrame([
-                {"ประเภทวัน": "🖲️ วันทำงาน", "ยอดรวม (บาท)": round(total_weekday, 2), "สัดส่วน (%)": round(pct_weekday, 1)},
-                {"ประเภทวัน": "🏕️ วันหยุด", "ยอดรวม (บาท)": round(total_weekend, 2), "สัดส่วน (%)": round(pct_weekend, 1)},
-                {"ประเภทวัน": "💵 ยอดรวมทั้งหมด", "ยอดรวม (บาท)": round(grand_total, 2), "สัดส่วน (%)": 100.0},
-            ])
-
-            st.dataframe(
-                summary_display_df,
-                use_container_width=True,
-                hide_index=True,
-                column_config={
-                    "ประเภทวัน": st.column_config.TextColumn("ประเภทวัน", width="medium"),
-                    "ยอดรวม (บาท)": st.column_config.NumberColumn("ยอดรวม (บาท)", format="%.2f บาท"),
-                    "สัดส่วน (%)": st.column_config.ProgressColumn(
-                        "สัดส่วน (%)", format="%.1f%%", min_value=0, max_value=100
-                    ),
-                },
-            )
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.metric("🖲️ วันทำงาน", f"{total_weekday:,.2f} บาท", f"{pct_weekday:.1f}%")
+            with col2:
+                st.metric("🏕️ วันหยุด", f"{total_weekend:,.2f} บาท", f"{pct_weekend:.1f}%")
+            with col3:
+                st.metric("💵 ยอดรวมทั้งหมด", f"{grand_total:,.2f} บาท")
 
             st.markdown("---")
 
