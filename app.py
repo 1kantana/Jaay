@@ -63,7 +63,7 @@ month_options = list(range(1, 13))
 default_month_index = now.month - 1
 
 selected_month = st.selectbox(
-    "🗓️ เดือนอ้างอิง (ใช้กับวันที่ที่ไม่ได้ระบุเดือน)",
+    "🗓️ เดือนล่าสุดของข้อมูล (เดือนของรายการท้ายสุดที่กรอก)",
     options=month_options,
     index=default_month_index,
     format_func=lambda m: THAI_MONTHS[m - 1],
@@ -78,27 +78,33 @@ def is_weekend(day_num, month_num):
     except ValueError:
         return False, f"{day_num}/{month_num} (วันที่ไม่ถูกต้อง)"
 
-def parse_day_month(day_part, default_month):
-    """แยกวันที่และเดือนจากส่วนหน้าสุดของบรรทัด รองรับทั้ง 'DD' และ 'DD/MM'"""
-    if "/" in day_part:
-        d_str, _, m_str = day_part.partition("/")
+def parse_day(day_part):
+    """แยกวันที่ (และเดือน ถ้าระบุมาด้วย) จากส่วนหน้าสุดของบรรทัด
+    รองรับ 'DD', 'DD/MM', 'DD-MM'. คืนค่า (day_num, explicit_month_or_None)"""
+    sep = "/" if "/" in day_part else ("-" if "-" in day_part else None)
+    if sep:
+        d_str, _, m_str = day_part.partition(sep)
         if not (d_str.isdigit() and m_str.isdigit()):
             return None, None
         return int(d_str), int(m_str)
     if not day_part.isdigit():
         return None, None
-    return int(day_part), default_month
+    return int(day_part), None
 
 # ช่องสำหรับกรอกข้อมูลค่าใช้จ่าย
 data = st.text_area(
     "กรอกข้อมูลค่าใช้จ่ายของคุณ:",
     value="",
     height=200,
-    placeholder="ตัวอย่างการกรอก:\n15 อเมซอน 60 สตาร์บัคส์ 160\n31/7 ค่าทางด่วน 50  (ระบุเดือนได้ ถ้าเป็นเดือนอื่นนอกจากเดือนอ้างอิง)"
+    placeholder="ตัวอย่างการกรอก:\n15 อเมซอน 60 สตาร์บัคส์ 160\n27 28 29 30 31 1 2  (คาบเกี่ยวเดือน ระบบจะเดาเดือนให้อัตโนมัติ)"
 )
 
 # ใส่คำอธิบายรูปแบบการกรอกใต้กล่องข้อความ
-st.caption("💡 รูปแบบที่รองรับ: `[วันที่] [รายการ] [จำนวนเงิน] ...` หรือ `[วันที่/เดือน] [รายการ] [จำนวนเงิน] ...` (เว้นวรรคแยกแต่ละส่วน) — ถ้าไม่ระบุเดือนจะใช้ \"เดือนอ้างอิง\" ด้านบน")
+st.caption(
+    "💡 รูปแบบที่รองรับ: `[วันที่] [รายการ] [จำนวนเงิน] ...` เรียงตามลำดับวันที่จริง — "
+    "ถ้าเลขวันที่ \"ย้อนกลับ\" ระหว่างบรรทัด (เช่น จาก 31 ไป 1) ระบบจะถือว่าข้ามไปเดือนถัดไปให้อัตโนมัติ "
+    "(นับจาก \"เดือนล่าสุดของข้อมูล\" ด้านบนถอยหลังไป) หรือจะระบุเดือนเองต่อวันที่ก็ได้ เช่น `27/7` หรือ `27-7`"
+)
 
 # ปุ่มกดคำนวณเงิน
 if st.button("คำนวณเงิน", type="primary"):
@@ -110,20 +116,46 @@ if st.button("คำนวณเงิน", type="primary"):
         total_weekend = 0.0
         all_rows = []
 
-        for line in data.strip().split('\n'):
-            line = line.strip()
-            if not line:
-                continue
-            
+        raw_lines = [ln.strip() for ln in data.strip().split('\n') if ln.strip()]
+
+        # ---------- Pass 1: แยกวันที่/เดือน(ถ้ามี) ของแต่ละบรรทัด ----------
+        parsed_lines = []  # list of dict: line, parts, day_num, explicit_month
+        for line in raw_lines:
             parts = line.split()
             day_part = parts[0]
-
-            day_num, month_num = parse_day_month(day_part, selected_month)
+            day_num, explicit_month = parse_day(day_part)
             if day_num is None:
                 st.error(f"⚠️ บรรทัดนี้ไม่ได้ขึ้นต้นด้วยวันที่ที่ถูกต้อง: '{line}'")
                 continue
+            parsed_lines.append({
+                "line": line, "parts": parts,
+                "day_num": day_num, "explicit_month": explicit_month,
+            })
 
-            weekend, formatted_date = is_weekend(day_num, month_num)
+        # ---------- Pass 2: เดาเดือนอัตโนมัติ (ไล่จากบรรทัดสุดท้ายย้อนขึ้นไป) ----------
+        # สมมติว่าผู้ใช้กรอกเรียงตามลำดับวันที่จริง (เก่า -> ใหม่)
+        # ถ้าเลขวันที่ "ย้อนกลับ" เมื่อไล่จากท้ายขึ้นต้น (เช่น 1 -> 31) แปลว่าข้ามเดือนก่อนหน้า
+        month_cursor = selected_month
+        prev_day = None
+        for entry in reversed(parsed_lines):
+            if entry["explicit_month"] is not None:
+                month_cursor = entry["explicit_month"]
+                entry["month_num"] = month_cursor
+            else:
+                if prev_day is not None and entry["day_num"] > prev_day:
+                    month_cursor -= 1
+                    if month_cursor < 1:
+                        month_cursor = 12
+                entry["month_num"] = month_cursor
+            prev_day = entry["day_num"]
+
+        # ---------- Pass 3: คำนวณยอดตามเดือน/วันที่ที่ระบุ ----------
+        for entry in parsed_lines:
+            line = entry["line"]
+            parts = entry["parts"]
+            day_part = parts[0]
+
+            weekend, formatted_date = is_weekend(entry["day_num"], entry["month_num"])
             day_type = "Weekend" if weekend else "Weekday"
             items_part = " ".join(parts[1:])
             
